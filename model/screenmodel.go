@@ -108,13 +108,13 @@ func (m ScreenModel) headerView() string {
 	builder := strings.Builder{}
 	switch m.status {
 	case INPUTMODE:
-		builder.WriteString("--INSERT--")
-		builder.WriteString("ESC to VISUAL MODE, ")
+		//builder.WriteString("--INSERT--")
+		builder.WriteString("ESC to last step, ")
 	case VISUALMODE:
 		builder.WriteString("[VISUAL]:")
 		builder.WriteString("i to INSERT MODE, 'b' or ESC to last step, ")
 	}
-	builder.WriteString("ctrl+c to exit")
+	builder.WriteString("ctrl+c to exit. you can page up and down with scroll whell or arrow key")
 	title := titleStyle.Render(builder.String())
 	line := strings.Repeat("─", max(0, m.view.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)

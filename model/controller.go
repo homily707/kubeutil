@@ -3,6 +3,8 @@ package model
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"kubeutil/client"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -58,9 +60,12 @@ func (c *KubeController) addRoute(s string, f cmdFunc) {
 	c.route[s] = f
 }
 
-func NewKubeController(kubeClient client.KubeClient, route map[string]cmdFunc, backmap map[string]string) *KubeController {
+func NewKubeController() *KubeController {
+	home := os.Getenv("HOME")
+	kubeconfig := filepath.Join(home, ".kube", "config")
+
 	c := &KubeController{
-		kubeClient: kubeClient,
+		kubeClient: client.NewKubeClientFromConfig(kubeconfig),
 		curPath:    RootPath,
 		route:      map[string]cmdFunc{},
 		backmap:    map[string]string{},
@@ -69,8 +74,8 @@ func NewKubeController(kubeClient client.KubeClient, route map[string]cmdFunc, b
 	c.addRoute(RootPath, nilCmdWrap(c.listFunction))
 	c.addRoute("/func", nilCmdWrap(c.getFuncThenListNamespace))
 	c.addRoute("/func/ns", nilCmdWrap(c.getNsThenListChoice))
-	c.addRoute("/func/ns/log", nilCmdWrap(logPod))
-	c.addRoute("/func/ns/exec", execPod)
+	c.addRoute("/func/ns/log", nilCmdWrap(c.logPod))
+	c.addRoute("/func/ns/exec", c.execPod)
 
 	c.backmap[RootPath] = RootPath
 	c.backmap["/func"] = RootPath
@@ -103,18 +108,33 @@ func (c *KubeController) getNsThenListChoice(input string) string {
 	if err != nil {
 		return "parse index error"
 	}
-	c.kubeClient.SelectNs(i)
+	if err := c.kubeClient.SelectNs(i); err != nil {
+		return err.Error()
+	}
 	switch c.protype {
-	case LOG, EXEC:
+	case LOG:
+		c.curPath = c.curPath + "/log"
+		return c.kubeClient.ListCurNsPods()
+	case EXEC:
+		c.curPath = c.curPath + "/exec"
 		return c.kubeClient.ListCurNsPods()
 	}
 	return "something wrong"
 }
 
-func logPod(input string) string {
-
+func (c *KubeController) logPod(input string) string {
+	i, err := strconv.Atoi(input)
+	if err != nil {
+		return "parse index error"
+	}
+	return c.kubeClient.LogPod(i)
 }
 
-func execPod(input string) (string, tea.Cmd) {
-
+func (c *KubeController) execPod(input string) (string, tea.Cmd) {
+	i, err := strconv.Atoi(input)
+	if err != nil {
+		return "parse index error", nil
+	}
+	s, cmd := c.kubeClient.ExecPod(i)
+	return s, tea.Exec(tea.WrapExecCommand(cmd), nil)
 }

@@ -17,7 +17,8 @@ type (
 
 func NewRootModel() RootModel {
 	return RootModel{
-		screen: NewScreenModel(),
+		screen:     NewScreenModel(),
+		controller: NewKubeController(),
 	}
 }
 
@@ -35,11 +36,12 @@ func (r RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if r.screen.status == INPUTMODE {
 			switch msg.String() {
+			case "ctrl+c":
+				return r, tea.Quit
 			case "esc":
-				// change to visual
-				r.screen.status = VISUALMODE
+				// back to last step
+				cmd = r.handleInput(back)
 				r.screen.input.Reset()
-				r.screen.input.Blur()
 			case "enter":
 				cmd = r.handleInput(r.screen.input.Value())
 				if cmd != nil {
@@ -48,14 +50,6 @@ func (r RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, cmd)
 				r.screen.input.Reset()
 				r.screen.view.GotoBottom()
-			}
-		} else if r.screen.status == VISUALMODE {
-			switch msg.String() {
-			case "b", "esc":
-				cmd = r.handleInput(back)
-			case "i":
-				r.screen.status = INPUTMODE
-				r.screen.input.Focus()
 			}
 		}
 	}
