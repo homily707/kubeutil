@@ -3,6 +3,7 @@ package model
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"kubeutil/client"
+	"kubeutil/util/inputhandler"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 const (
 	LOG ProType = iota + 1
 	EXEC
-	EDIT_CONFIG
+	CONFIG
 )
 
 const RootPath = ""
@@ -76,12 +77,16 @@ func NewKubeController() *KubeController {
 	c.addRoute("/func/ns", nilCmdWrap(c.getNsThenListChoice))
 	c.addRoute("/func/ns/log", nilCmdWrap(c.logPod))
 	c.addRoute("/func/ns/exec", c.execPod)
+	c.addRoute("/func/ns/config", nilCmdWrap(c.showConfigData))
+	c.addRoute("/func/ns/config/edit", nilCmdWrap(c.editConfigData))
 
 	c.backmap[RootPath] = RootPath
 	c.backmap["/func"] = RootPath
 	c.backmap["/func/ns"] = RootPath
 	c.backmap["/func/ns/log"] = "/func"
 	c.backmap["/func/ns/exec"] = "/func"
+	c.backmap["/func/ns/config"] = "/func"
+	c.backmap["/func/ns/config/edit"] = "/func/ns"
 
 	return c
 }
@@ -90,7 +95,8 @@ func (c *KubeController) listFunction(input string) string {
 	c.curPath = c.curPath + "/func"
 	return "choose function \n" +
 		"1: log \n" +
-		"2: exec"
+		"2: exec \n" +
+		"3: config"
 }
 
 func (c *KubeController) getFuncThenListNamespace(input string) string {
@@ -118,6 +124,9 @@ func (c *KubeController) getNsThenListChoice(input string) string {
 	case EXEC:
 		c.curPath = c.curPath + "/exec"
 		return c.kubeClient.ListCurNsPods()
+	case CONFIG:
+		c.curPath = c.curPath + "/config"
+		return c.kubeClient.ListConfigMaps()
 	}
 	return "something wrong"
 }
@@ -137,4 +146,18 @@ func (c *KubeController) execPod(input string) (string, tea.Cmd) {
 	}
 	s, cmd := c.kubeClient.ExecPod(i)
 	return s, tea.Exec(tea.WrapExecCommand(cmd), nil)
+}
+
+func (c *KubeController) showConfigData(input string) string {
+	i, err := strconv.Atoi(input)
+	if err != nil {
+		return "parse index error"
+	}
+	c.curPath += "/edit"
+	return c.kubeClient.ShowConfigMap(i)
+}
+
+func (c *KubeController) editConfigData(s string) string {
+	i, value := inputhandler.Kvsplit(s)
+	return c.kubeClient.UpdateConfigMap(i, value)
 }
