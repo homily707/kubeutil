@@ -95,8 +95,22 @@ func (c KubeClient) ExecPod(i int) (string, *exec.Cmd) {
 		return "index out of range", nil
 	}
 	cmd := exec.Command("kubectl", "exec", "-it", "-n", c.curNamespace,
-		c.pods[i].Name, "--", "sh", "-c", "clear; (bash || sh || ash)")
-	return "wait a moment", cmd
+		c.pods[i].Name, "--", "sh", "-c", "clear;  (bash || sh || ash)")
+	return cmd.String(), cmd
+}
+
+//kubectl exec -it mysql-mysql-cluster-0 -- sh -c "mysql -u root -h mysql-mysql-cluster -p"
+func (c KubeClient) LoginDPSMysql() (string, *exec.Cmd) {
+	cmd := exec.Command("kubectl", "exec", "-it", "-n", c.curNamespace,
+		"mysql-mysql-cluster-0", "--", "sh", "-c", "mysql -u root -h mysql-mysql-cluster -p")
+	return cmd.String(), cmd
+}
+
+//kubectl exec -it redis-redis-cluster-0 -- sh -c "redis-cli -h redis-redis-cluster"
+func (c KubeClient) LoginDPSRedis() (string, *exec.Cmd) {
+	cmd := exec.Command("kubectl", "exec", "-it", "-n", c.curNamespace,
+		"redis-redis-cluster-0", "--", "sh", "-c", "redis-cli -h redis-redis-cluster")
+	return cmd.String(), cmd
 }
 
 func (c *KubeClient) ListConfigMaps() string {

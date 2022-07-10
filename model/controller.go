@@ -13,6 +13,8 @@ const (
 	LOG ProType = iota + 1
 	EXEC
 	CONFIG
+	MYSQL
+	REDIS
 )
 
 const RootPath = ""
@@ -79,6 +81,8 @@ func NewKubeController() *KubeController {
 	c.addRoute("/func/ns/exec", c.execPod)
 	c.addRoute("/func/ns/config", nilCmdWrap(c.showConfigData))
 	c.addRoute("/func/ns/config/edit", nilCmdWrap(c.editConfigData))
+	c.addRoute("/func/ns/dps-mysql", c.loginDpsMysql)
+	c.addRoute("/func/ns/dps-redis", c.loginDpsRedis)
 
 	c.backmap[RootPath] = RootPath
 	c.backmap["/func"] = RootPath
@@ -96,7 +100,9 @@ func (c *KubeController) listFunction(input string) string {
 	return "choose function \n" +
 		"1: log \n" +
 		"2: exec \n" +
-		"3: config"
+		"3: config \n" +
+		"4: mysql(for dps only) \n" +
+		"5: redis(for dps only) \n"
 }
 
 func (c *KubeController) getFuncThenListNamespace(input string) string {
@@ -127,6 +133,12 @@ func (c *KubeController) getNsThenListChoice(input string) string {
 	case CONFIG:
 		c.curPath = c.curPath + "/config"
 		return c.kubeClient.ListConfigMaps()
+	case MYSQL:
+		c.curPath = c.curPath + "/dps-mysql"
+		return "please press enter to confirm"
+	case REDIS:
+		c.curPath = c.curPath + "/dps-redis"
+		return "please press enter to confirm"
 	}
 	return "something wrong"
 }
@@ -145,6 +157,16 @@ func (c *KubeController) execPod(input string) (string, tea.Cmd) {
 		return "parse index error", nil
 	}
 	s, cmd := c.kubeClient.ExecPod(i)
+	return s, tea.Exec(tea.WrapExecCommand(cmd), nil)
+}
+
+func (c *KubeController) loginDpsMysql(input string) (string, tea.Cmd) {
+	s, cmd := c.kubeClient.LoginDPSMysql()
+	return s, tea.Exec(tea.WrapExecCommand(cmd), nil)
+}
+
+func (c *KubeController) loginDpsRedis(input string) (string, tea.Cmd) {
+	s, cmd := c.kubeClient.LoginDPSRedis()
 	return s, tea.Exec(tea.WrapExecCommand(cmd), nil)
 }
 
