@@ -78,6 +78,7 @@ func NewKubeController() *KubeController {
 	c.addRoute("/func", nilCmdWrap(c.getFuncThenListNamespace))
 	c.addRoute("/func/ns", nilCmdWrap(c.getNsThenListChoice))
 	c.addRoute("/func/ns/log", nilCmdWrap(c.logPod))
+	c.addRoute("/func/ns/log/search", nilCmdWrap(c.getWordAndSearchLog))
 	c.addRoute("/func/ns/exec", c.execPod)
 	c.addRoute("/func/ns/config", nilCmdWrap(c.showConfigData))
 	c.addRoute("/func/ns/config/edit", nilCmdWrap(c.editConfigData))
@@ -148,7 +149,12 @@ func (c *KubeController) logPod(input string) string {
 	if err != nil {
 		return "parse index error"
 	}
+	c.curPath = c.curPath + "/search"
 	return c.kubeClient.LogPod(i)
+}
+
+func (c *KubeController) getWordAndSearchLog(input string) string {
+	return c.kubeClient.SearchPod(input)
 }
 
 func (c *KubeController) execPod(input string) (string, tea.Cmd) {

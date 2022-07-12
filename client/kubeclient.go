@@ -10,6 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"kubeutil/util/inputhandler"
+	"kubeutil/util/math"
 	"log"
 	"os/exec"
 	"strings"
@@ -21,6 +23,7 @@ var (
 	CurCMKeyList = "CurrentCMKeyList"
 	CurNS        = "CurrentNamespace"
 	CurPODS      = "CurrentPods"
+	CurPOD       = "CurrentPod"
 )
 
 type KubeClient struct {
@@ -80,6 +83,7 @@ func (c KubeClient) LogPod(i int) string {
 	if i > len(c.pods) {
 		return "index out of range"
 	}
+	c.Set(CurPOD, c.pods[i].Name)
 	req := c.CoreV1().Pods(c.curNamespace).GetLogs(c.pods[i].Name, &v1.PodLogOptions{})
 	body, err := req.Stream(context.Background())
 	if err != nil {
@@ -88,6 +92,25 @@ func (c KubeClient) LogPod(i int) string {
 	var buf bytes.Buffer
 	io.Copy(&buf, body)
 	return buf.String()
+}
+
+func (c KubeClient) SearchPod(word string) string {
+	podname := c.Get(CurPOD).(string)
+	req := c.CoreV1().Pods(c.curNamespace).GetLogs(podname, &v1.PodLogOptions{})
+	body, err := req.Stream(context.TODO())
+	if err != nil {
+		return "get log error" + err.Error()
+	}
+	var buf bytes.Buffer
+	io.Copy(&buf, body)
+	text := buf.Bytes()
+	indexs := inputhandler.Kmp(text, []byte(word))
+
+	builder := strings.Builder{}
+	for _, i := range indexs {
+		builder.Write(text[math.Max(0, i-20):math.Min(len(text), i+20)])
+	}
+	return builder.String()
 }
 
 func (c KubeClient) ExecPod(i int) (string, *exec.Cmd) {
