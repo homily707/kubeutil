@@ -18,12 +18,14 @@ type (
 func NewRootModel() RootModel {
 	return RootModel{
 		screen:     NewScreenModel(),
-		controller: NewKubeController(),
+		controller: NewFuncController(),
 	}
 }
 
 func (r RootModel) Init() tea.Cmd {
-	return nil
+	return func() tea.Msg {
+		return tea.Key{Type: tea.KeyEnter}
+	}
 }
 
 func (r RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
