@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
-	"kubeutil/model"
+	"kubeutil/internal/biz"
+	"kubeutil/internal/controller"
+	"kubeutil/staging/model"
+	_ "net/http/pprof"
 	"os"
 )
 
@@ -13,6 +16,10 @@ func main() {
 	//	builder.WriteString(strconv.Itoa(i) + "\n")
 	//}
 	//content := builder.String()
+
+	controller.StartFunctions["LOG"] = biz.GetNsThenListPodsToLog
+	controller.StartFunctions["EXEC"] = biz.GetNsThenListPodsToExec
+	controller.StartFunctions["CONFIG"] = biz.GetNsThenListConfigMaps
 
 	p := tea.NewProgram(
 		model.NewRootModel(),

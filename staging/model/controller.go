@@ -2,8 +2,8 @@ package model
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"kubeutil/client"
-	"kubeutil/util/inputhandler"
+	"kubeutil/staging/client"
+	"kubeutil/staging/util/inputhandler"
 	"os"
 	"path/filepath"
 	"strconv"

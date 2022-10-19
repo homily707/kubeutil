@@ -2,7 +2,7 @@ package model
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"kubeutil/client"
+	"kubeutil/staging/client"
 	"strings"
 )
 

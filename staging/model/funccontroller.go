@@ -2,7 +2,7 @@ package model
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"kubeutil/client"
+	"kubeutil/staging/client"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -50,6 +50,7 @@ func (f *funcController) HandleInput(s string) (string, tea.Cmd) {
 
 	return f.context.output, f.context.cmd
 }
+
 func rootFunc(c *Context) {
 	c.WriteLine("choose function")
 	for i, f := range c.startFunctions {
